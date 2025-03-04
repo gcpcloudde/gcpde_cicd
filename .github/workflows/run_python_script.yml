@@ -1,6 +1,6 @@
-name: Run Python Script
+name: Run Python Script and Upload to GCS
 
-on:  
+on:
   push:
     branches:
       - main
@@ -21,3 +21,14 @@ jobs:
 
       - name: Run Python Script
         run: python print_numbers.py
+
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Upload Python Script to GCS
+        uses: google-github-actions/upload-cloud-storage@v1
+        with:
+          path: print_numbers.py
+          destination: gs://gcp-pandas-buc1
