@@ -1,3 +1,0 @@
-apache-airflow[gcp]
-google-cloud-bigquery
-google-cloud-storage
