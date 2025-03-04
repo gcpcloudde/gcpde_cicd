@@ -31,4 +31,4 @@ jobs:
         uses: google-github-actions/upload-cloud-storage@v1
         with:
           path: print_numbers.py
-          destination: gs://gcp-pandas-buc1
+          destination: gcp-pandas-buc1
