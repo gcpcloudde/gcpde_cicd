@@ -1,41 +1,38 @@
-name: Deploy DAG to Cloud Composer
+name: Deploy DAGs to Composer
 
 on:
   push:
     branches:
-      - main  # Trigger on push to main branch
+      - main
     paths:
-      - "dags/**"
+      - "dags/**"   # Only trigger when files in 'dags' folder change
 
 jobs:
   deploy:
-    name: Deploy DAG to Composer
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Set Up Google Cloud SDK
-      uses: google-github-actions/auth@v1
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: Authenticate with GCP
-      run: |
-        echo "${{ secrets.GCP_SA_KEY }}" > $HOME/gcp-key.json
-        gcloud auth activate-service-account --key-file=$HOME/gcp-key.json
-        gcloud config set project long-perception-447114-s0
+      - name: Install gcloud SDK
+        run: |
+          sudo apt-get update && sudo apt-get install -y google-cloud-sdk
 
-    - name: Deploy DAG to Composer
-      run: |
-        gcloud composer environments storage dags import \
-          --environment=composer-dev \
-          --location=us-central1 \
-          --source=dags/gcs_to_bq_dag.py
+      - name: Set GCP Project and Composer Environment Variables
+        run: |
+          gcloud config set project YOUR_GCP_PROJECT_ID
+          echo "COMPOSER_BUCKET=$(gcloud composer environments describe YOUR_COMPOSER_ENVIRONMENT --location YOUR_REGION --format='value(config.dagGcsPrefix)')" >> $GITHUB_ENV
 
-    - name: Restart Composer to Apply Changes
-      run: |
-        gcloud composer environments restart \
-          --environment=composer-dev \
-          --location=us-central1
+      - name: Sync DAGs to Composer
+        run: |
+          gsutil -m rsync -r dags/ $COMPOSER_BUCKET
+
+      - name: Trigger DAG Refresh
+        run: |
+          gcloud composer environments run YOUR_COMPOSER_ENVIRONMENT \
+            --location YOUR_REGION dags trigger -- YOUR_DAG_ID
