@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "dags/**"   # Only trigger when files in 'dags' folder change
+      - "gcs_to_bq_pipeline/dags/**"  # Trigger only when DAGs change
 
 jobs:
   deploy:
@@ -30,9 +30,9 @@ jobs:
 
       - name: Sync DAGs to Composer
         run: |
-          gsutil -m rsync -r dags/ $COMPOSER_BUCKET
+          gsutil -m rsync -r gcs_to_bq_pipeline/dags/ $COMPOSER_BUCKET
 
       - name: Trigger DAG Refresh
         run: |
           gcloud composer environments run YOUR_COMPOSER_ENVIRONMENT \
-            --location YOUR_REGION dags trigger -- YOUR_DAG_ID
+            --location YOUR_REGION dags trigger -- gcs_to_bq_dag
